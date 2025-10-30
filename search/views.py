@@ -36,7 +36,9 @@ class SearchViewPage(View):
             results = self.request.session.get("results", [])
             messages.error(request, "Please enter alteast one search query.")
             return render(self.request, self.template_name, {"results": results})
-
+        if not DATA_FOR_SEO_PASSWORD or not DATA_FOR_SEO_USERNAME:
+            messages.error(request, "DataForSEO API credentials are not set properly.")
+            return render(self.request, self.template_name,)
         #Creating Api cleint for DataForSEO
         try:
             client = RestClient(DATA_FOR_SEO_USERNAME, DATA_FOR_SEO_PASSWORD)
@@ -107,7 +109,7 @@ class DownloadCSVView(View):
             messages.error(self.request, "No results to download.")
             return render(request, self.template_name)
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="search_results.csv"'
+        response["Content-Disposition"] = "attachment; filename=search_results.csv"
         #Generating CSV file
         writer = csv.writer(response)
         writer.writerow(['Query', 'Title', 'Link', 'Snippet'])
