@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 #Load eviroments variables from .env file
 load_dotenv()
-DATA_FOR_SEO_USERNAME = os.getenv('USERNAME')
+DATA_FOR_SEO_USERNAME = os.getenv('LOGIN')
 DATA_FOR_SEO_PASSWORD = os.getenv('PASSWORD')
 
 class SearchViewPage(View):
@@ -64,12 +64,12 @@ class SearchViewPage(View):
     
     def fetch_query_results(self,client,query):
         results = []
-        post_data = {}
-        post_data[0] = {
-            "language_code": "en",
-            "location_code": 2840,
-            "keyword": query
-        }
+        post_data = dict()
+        post_data[len(post_data)] = dict(
+            language_code="en",
+            location_code=2840,
+            keyword=query,
+        )
         try:
             response = client.post("/v3/serp/google/organic/live/regular", post_data)
             #For debugging
@@ -88,7 +88,7 @@ class SearchViewPage(View):
                             "snippet": item.get("description", ""),
                         })            
             else:
-                raise Exception(f"Error: {response["status_code"], response["status_message"]}")
+                raise Exception(f"Error: {response['status_code']}, {response['status_message']}")
         except requests.exceptions.ConnectionError:
             raise Exception("Network error: Unable to connect to DataForSEO API.")
         except requests.exceptions.Timeout:
@@ -107,7 +107,7 @@ class DownloadCSVView(View):
             messages.error(self.request, "No results to download.")
             return render(request, self.template_name)
         response = HttpResponse(content_type='text/csv')
-        response['content'] = 'attachment; filename="search_results.csv"'
+        response['Content-Disposition'] = 'attachment; filename="search_results.csv"'
         #Generating CSV file
         writer = csv.writer(response)
         writer.writerow(['Query', 'Title', 'Link', 'Snippet'])
