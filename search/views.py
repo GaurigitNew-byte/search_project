@@ -1,5 +1,6 @@
 import os
 import csv
+import time
 import requests
 from django.shortcuts import render
 from django.contrib import messages
@@ -28,7 +29,7 @@ class SearchViewPage(View):
         # Get the queries from the post request and remove extra spaces and empty queries
         queries = self.request.POST.getlist("q")
         queries = [q.strip() for q in queries if q.strip()]
-
+        start_time = time.time()
         results = []
 
         if not queries:
@@ -51,12 +52,14 @@ class SearchViewPage(View):
             for future in as_completed(future_results):
                 query = future_results[future]
                 try:
-                    response = future.result(timeout=15)
+                    response = future.result()
                     results.extend(response)
                 except TimeoutError:
                     messages.error(request, f"Timeout error occurred while fetching results for '{query}'")
                 except Exception as e:
                     messages.error(request, f"Error fetching results for '{query}': {e}")
+        end_time = time.time()
+        print(f"\n Total time for {len(queries)} new queries: {end_time - start_time:.2f} seconds\n")
         if results:
             messages.success(request, "Search completed successfully!")
         else:
@@ -74,11 +77,13 @@ class SearchViewPage(View):
             location_code=2840,
             keyword=query,
         )
+        start_time = time.time()
         try:
             response = client.post("/v3/serp/google/organic/live/regular", post_data)
+            end_time = time.time()
             #For debugging
             print(response)
-
+            print(f"Query '{query}' completed in ': {end_time - start_time:.2f} seconds")
             if response.get("status_code") == 20000:
                 #Parse the response and extract the result items
                 tasks = response.get("tasks", [])
