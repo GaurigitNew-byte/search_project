@@ -51,8 +51,10 @@ class SearchViewPage(View):
             for future in as_completed(future_results):
                 query = future_results[future]
                 try:
-                    response = future.result()
+                    response = future.result(timeout=15)
                     results.extend(response)
+                except TimeoutError:
+                    messages.error(request, f"Timeout error occurred while fetching results for '{query}'.")
                 except Exception as e:
                     messages.error(request, f"Error fetching results for '{query}': {e}")
         if results:
@@ -93,8 +95,6 @@ class SearchViewPage(View):
                 raise Exception(f"Error: {response['status_code']}, {response['status_message']}")
         except requests.exceptions.ConnectionError:
             raise Exception("Network error: Unable to connect to DataForSEO API.")
-        except requests.exceptions.Timeout:
-            raise Exception("Network error: Request to DataForSEO API timed out.")
         except Exception as e:
             raise Exception(f"Failed to fetch results for query '{query}': {e}")
         return results
